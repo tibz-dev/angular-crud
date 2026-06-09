@@ -1,0 +1,67 @@
+<!-- ============================================================
+  ANGULAR TEMPLATES — Reactive Forms + Data Binding
+
+  REACTIVE FORMS directives:
+    [formGroup]="form"       — Binds this <form> to the FormGroup
+    formControlName="name"   — Links input to a named FormControl
+    (ngSubmit)="onSubmit()"  — Event binding for form submission
+
+  PROPERTY BINDING:
+    [disabled]="form.invalid" — disables Save button if form is invalid
+
+  INTERPOLATION:
+    {{ product ? 'Edit' : 'New' }} — ternary expression in template
+
+  VALIDATION STATE via FormControl accessors:
+    form.get('name')?.invalid  — true when control fails validation
+    form.get('name')?.touched  — true after user has interacted with it
+    Showing errors only when touched prevents errors on page load
+============================================================ -->
+
+<div class="form-card">
+
+  <!-- Interpolation with ternary: shows context-aware heading -->
+  <h3>{{ product ? 'Edit Product' : 'New Product' }}</h3>
+
+  <!-- [formGroup] binds the template form to the TypeScript FormGroup -->
+  <!-- (ngSubmit) event binding calls onSubmit() on form submission -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+    <!-- NAME field -->
+    <label>Name
+      <!-- formControlName links this input to the 'name' FormControl -->
+      <input formControlName="name" placeholder="Product name" />
+      <!-- Validation error: only show after user touches the field -->
+      <span class="error"
+        *ngIf="form.get('name')?.invalid && form.get('name')?.touched">
+        Name is required.
+      </span>
+    </label>
+
+    <!-- PRICE field -->
+    <label>Price (R)
+      <input type="number" formControlName="price" placeholder="0.00" />
+      <span class="error"
+        *ngIf="form.get('price')?.invalid && form.get('price')?.touched">
+        Enter a valid price (must be 0 or more).
+      </span>
+    </label>
+
+    <!-- CATEGORY field -->
+    <label>Category
+      <input formControlName="category" placeholder="e.g. Electronics" />
+      <span class="error"
+        *ngIf="form.get('category')?.invalid && form.get('category')?.touched">
+        Category is required.
+      </span>
+    </label>
+
+    <div class="actions">
+      <!-- Property binding: [disabled] prevents submission of invalid form -->
+      <button type="submit" [disabled]="form.invalid">Save</button>
+      <!-- Event binding: calls onCancel() which emits the cancel @Output -->
+      <button type="button" (click)="onCancel()">Cancel</button>
+    </div>
+
+  </form>
+</div>

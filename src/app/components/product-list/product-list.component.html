@@ -1,0 +1,69 @@
+<!-- ============================================================
+  ANGULAR TEMPLATES — Data Binding, Directives, Pipes
+
+  DATA BINDING TYPES used here:
+    {{ expression }}       — Interpolation (one-way, component → view)
+    [property]="value"     — Property binding (component → element)
+    (event)="handler()"    — Event binding (element → component)
+
+  BUILT-IN DIRECTIVES used here:
+    *ngIf  — Conditionally renders an element
+    *ngFor — Renders a list by iterating over an array
+
+  PIPES used here:
+    number:'1.2-2'  — Formats a number (min 1 integer digit,
+                      min 2 and max 2 decimal places)
+                      e.g. 3500 → "3,500.00"
+============================================================ -->
+
+<div class="container">
+
+  <!-- Header row: title + Add button -->
+  <div class="header">
+    <h2>Products</h2>
+    <!-- Event binding: calls onAdd() when button is clicked -->
+    <button (click)="onAdd()">+ Add Product</button>
+  </div>
+
+  <!-- *ngIf DIRECTIVE: only renders the form component when showForm is true -->
+  <!-- [product] is PROPERTY BINDING — passes data down to child component -->
+  <!-- (save) and (cancel) are EVENT BINDINGS — listen for child @Output events -->
+  <app-product-form
+    *ngIf="showForm"
+    [product]="selectedProduct"
+    (save)="onSave($event)"
+    (cancel)="onCancel()">
+  </app-product-form>
+
+  <!-- Products table -->
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Price (R)</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- *ngFor DIRECTIVE: loops over the products array
+           'let p of products' declares template variable p -->
+      <tr *ngFor="let p of products">
+        <!-- INTERPOLATION {{ }} — displays component data in the view -->
+        <td>{{ p.id }}</td>
+        <td>{{ p.name }}</td>
+        <td>{{ p.category }}</td>
+        <!-- PIPE: number:'1.2-2' formats 12000 as "12,000.00" -->
+        <td>R{{ p.price | number:'1.2-2' }}</td>
+        <td>
+          <!-- Event binding passes the whole product to onEdit() -->
+          <button (click)="onEdit(p)">Edit</button>
+          <!-- Only pass the id to onDelete() — that's all we need -->
+          <button class="danger" (click)="onDelete(p.id)">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
