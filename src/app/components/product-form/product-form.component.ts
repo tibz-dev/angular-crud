@@ -25,7 +25,7 @@ import { Product } from '../../models/product.model';
   selector: 'app-product-form',
   standalone: false,
   templateUrl: './product-form.component.html',
-  styleUrl: './product-form.component.css'
+  styleUrls: ['./product-form.component.css']
 })
 export class ProductFormComponent implements OnInit {
 

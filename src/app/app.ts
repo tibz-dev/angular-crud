@@ -20,7 +20,7 @@ import { Component } from '@angular/core';
   selector: 'app-root',        // Used as <app-root> in index.html
   standalone: false,           // Belongs to AppModule (not standalone)
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css']
 })
 export class App {
   // Root component simply hosts the product-list component
