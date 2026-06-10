@@ -26,7 +26,7 @@ export class ProductService {
 
   // Base URL of the ASP.NET Core API
   // In production this would come from environment.ts
-  private apiUrl = 'http://localhost:5000/api/products';
+  private apiUrl = 'http://localhost:5027/api/products';
 
   // HttpClient injected via DI — same pattern as before
   constructor(private http: HttpClient) {}
