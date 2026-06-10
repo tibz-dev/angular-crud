@@ -1,6 +1,22 @@
+// ============================================================
+// PRIMENG — ProductListComponent
+//
+// Uses PrimeNG components:
+//   p-toolbar       — top action bar
+//   p-table         — data table with sorting/filtering
+//   p-button        — styled buttons with icons
+//   p-confirmDialog — delete confirmation popup
+//   p-toast         — success/error notifications
+//
+// ConfirmationService — triggers the confirm dialog
+// MessageService      — triggers toast notifications
+// Both are injected via Angular DI
+// ============================================================
+
 import { Component, OnInit } from '@angular/core';
 import { Product } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-product-list',
@@ -12,90 +28,112 @@ export class ProductListComponent implements OnInit {
 
   products: Product[] = [];
   selectedProduct: Product | null = null;
-  showForm = false;
-  isLoading = false;   // Shows loading state while API responds
-  errorMessage = '';   // Displays API errors to the user
 
-  constructor(private productService: ProductService) {}
+  // Controls the PrimeNG Dialog visibility
+  showDialog = false;
+
+  // Search filter value bound to the table's globalFilter
+  searchValue = '';
+
+  constructor(
+    private productService: ProductService,
+    private confirmationService: ConfirmationService, // PrimeNG DI
+    private messageService: MessageService            // PrimeNG DI
+  ) {}
 
   ngOnInit(): void {
     this.loadProducts();
   }
 
-  // ── Subscribe to Observable to get data ──────────────────
-  // .subscribe() has two callbacks:
-  //   next  — runs when data arrives successfully
-  //   error — runs when the HTTP request fails
   loadProducts(): void {
-    this.isLoading = true;
     this.productService.getAll().subscribe({
-      next: (data) => {
-        this.products = data;   // Assign API response to array
-        this.isLoading = false;
-      },
-      error: (err) => {
-        this.errorMessage = 'Failed to load products.';
-        this.isLoading = false;
-        console.error(err);
-      }
+      next: (data) => this.products = data,
+      error: () => this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to load products'
+      })
     });
   }
 
   onAdd(): void {
     this.selectedProduct = null;
-    this.showForm = true;
+    this.showDialog = true;
   }
 
   onEdit(product: Product): void {
     this.selectedProduct = { ...product };
-    this.showForm = true;
+    this.showDialog = true;
   }
 
-  onDelete(id: number): void {
-    if (confirm('Are you sure you want to delete this product?')) {
-      // Subscribe to the delete Observable to trigger the request
-      this.productService.delete(id).subscribe({
-        next: () => this.loadProducts(),
-        error: (err) => {
-          this.errorMessage = 'Failed to delete product.';
-          console.error(err);
-        }
-      });
-    }
+  // ── PrimeNG ConfirmationService ───────────────────────────
+  // Instead of browser confirm(), we use a styled dialog
+  onDelete(product: Product): void {
+    this.confirmationService.confirm({
+      message: `Are you sure you want to delete <b>${product.name}</b>?`,
+      header: 'Confirm Delete',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.productService.delete(product.id).subscribe({
+          next: () => {
+            this.loadProducts();
+            // ── PrimeNG Toast notification ────────────────
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Deleted',
+              detail: `${product.name} removed`
+            });
+          },
+          error: () => this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to delete product'
+          })
+        });
+      }
+    });
   }
 
   onSave(data: Omit<Product, 'id'>): void {
     if (this.selectedProduct) {
-      // UPDATE — subscribe to trigger the PUT request
       this.productService.update(this.selectedProduct.id, data).subscribe({
         next: () => {
-          this.showForm = false;
-          this.selectedProduct = null;
+          this.showDialog = false;
           this.loadProducts();
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Updated',
+            detail: 'Product updated successfully'
+          });
         },
-        error: (err) => {
-          this.errorMessage = 'Failed to update product.';
-          console.error(err);
-        }
+        error: () => this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to update product'
+        })
       });
     } else {
-      // CREATE — subscribe to trigger the POST request
       this.productService.create(data).subscribe({
         next: () => {
-          this.showForm = false;
+          this.showDialog = false;
           this.loadProducts();
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Created',
+            detail: 'Product added successfully'
+          });
         },
-        error: (err) => {
-          this.errorMessage = 'Failed to create product.';
-          console.error(err);
-        }
+        error: () => this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to create product'
+        })
       });
     }
   }
 
   onCancel(): void {
-    this.showForm = false;
+    this.showDialog = false;
     this.selectedProduct = null;
-    this.errorMessage = '';
   }
 }

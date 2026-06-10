@@ -1,1 +1,33 @@
-/* You can add global styles to this file, and also import other style files */
+/* PrimeNG v21 — no CSS imports needed, theme is configured
+   entirely in app-module.ts via providePrimeNG + Aura preset */
+@import "primeicons/primeicons.css";
+
+body {
+  margin: 0;
+  background-color: #f8f9fa;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.p-error {
+  color: #e24c4c;
+  font-size: 12px;
+}
+
+.mb-4 {
+  margin-bottom: 1.25rem;
+}
+
+.w-full {
+  width: 100%;
+}

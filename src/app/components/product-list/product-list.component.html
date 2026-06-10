@@ -1,71 +1,138 @@
 <!-- ============================================================
-  ANGULAR TEMPLATES — Data Binding, Directives, Pipes
-
-  DATA BINDING TYPES used here:
-    {{ expression }}       — Interpolation (one-way, component → view)
-    [property]="value"     — Property binding (component → element)
-    (event)="handler()"    — Event binding (element → component)
-
-  BUILT-IN DIRECTIVES used here:
-    *ngIf  — Conditionally renders an element
-    *ngFor — Renders a list by iterating over an array
-
-  PIPES used here:
-    number:'1.2-2'  — Formats a number (min 1 integer digit,
-                      min 2 and max 2 decimal places)
-                      e.g. 3500 → "3,500.00"
+  PRIMENG COMPONENTS USED:
+    p-toast         — floating notification messages
+    p-confirmDialog — styled delete confirmation popup
+    p-toolbar       — top bar with Add button
+    p-table         — sortable, filterable data table
+    p-button        — icon buttons for edit/delete
+    p-tag           — category badge with color
+    p-dialog        — modal for Add/Edit form
 ============================================================ -->
 
 <div class="container">
-  <p *ngIf="isLoading">Loading products...</p>
-  <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
 
-  <!-- Header row: title + Add button -->
-  <div class="header">
-    <h2>Products</h2>
-    <!-- Event binding: calls onAdd() when button is clicked -->
-    <button (click)="onAdd()">+ Add Product</button>
-  </div>
+  <!-- TOAST: floating notifications (success/error messages) -->
+  <p-toast></p-toast>
 
-  <!-- *ngIf DIRECTIVE: only renders the form component when showForm is true -->
-  <!-- [product] is PROPERTY BINDING — passes data down to child component -->
-  <!-- (save) and (cancel) are EVENT BINDINGS — listen for child @Output events -->
-  <app-product-form
-    *ngIf="showForm"
-    [product]="selectedProduct"
-    (save)="onSave($event)"
-    (cancel)="onCancel()">
-  </app-product-form>
+  <!-- CONFIRM DIALOG: styled delete confirmation -->
+  <p-confirmDialog></p-confirmDialog>
 
-  <!-- Products table -->
-  <table>
-    <thead>
+  <!-- TOOLBAR: top action bar -->
+  <p-toolbar styleClass="mb-4">
+    <ng-template pTemplate="left">
+      <h2 style="margin:0">Products</h2>
+    </ng-template>
+    <ng-template pTemplate="right">
+      <!-- p-button: PrimeNG styled button with icon -->
+      <p-button
+        label="New Product"
+        icon="pi pi-plus"
+        (onClick)="onAdd()">
+      </p-button>
+    </ng-template>
+  </p-toolbar>
+
+  <!-- TABLE: PrimeNG data table
+       [value]        — array to display
+       [paginator]    — enables pagination
+       [rows]         — rows per page
+       [globalFilterFields] — which fields the search filters -->
+  <p-table
+    #dt
+    [value]="products"
+    [paginator]="true"
+    [rows]="5"
+    [rowsPerPageOptions]="[5, 10, 20]"
+    [globalFilterFields]="['name','category']"
+    sortMode="multiple"
+    styleClass="p-datatable-gridlines">
+
+    <!-- Table caption holds the search box -->
+    <ng-template pTemplate="caption">
+      <div style="display:flex; justify-content:flex-end">
+        <p-iconfield>
+          <p-inputicon styleClass="pi pi-search"></p-inputicon>
+          <input
+            pInputText
+            type="text"
+            placeholder="Search..."
+            (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
+        </p-iconfield>
+      </div>
+    </ng-template>
+
+    <!-- Column headers — pSortableColumn enables click-to-sort -->
+    <ng-template pTemplate="header">
       <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Price (R)</th>
+        <th pSortableColumn="id">
+          ID <p-sortIcon field="id"></p-sortIcon>
+        </th>
+        <th pSortableColumn="name">
+          Name <p-sortIcon field="name"></p-sortIcon>
+        </th>
+        <th pSortableColumn="category">
+          Category <p-sortIcon field="category"></p-sortIcon>
+        </th>
+        <th pSortableColumn="price">
+          Price (R) <p-sortIcon field="price"></p-sortIcon>
+        </th>
         <th>Actions</th>
       </tr>
-    </thead>
-    <tbody>
-      <!-- *ngFor DIRECTIVE: loops over the products array
-           'let p of products' declares template variable p -->
-      <tr *ngFor="let p of products">
-        <!-- INTERPOLATION {{ }} — displays component data in the view -->
-        <td>{{ p.id }}</td>
-        <td>{{ p.name }}</td>
-        <td>{{ p.category }}</td>
-        <!-- PIPE: number:'1.2-2' formats 12000 as "12,000.00" -->
-        <td>R{{ p.price | number:'1.2-2' }}</td>
+    </ng-template>
+
+    <!-- Table rows — one row per product -->
+    <ng-template pTemplate="body" let-product>
+      <tr>
+        <td>{{ product.id }}</td>
+        <td>{{ product.name }}</td>
         <td>
-          <!-- Event binding passes the whole product to onEdit() -->
-          <button (click)="onEdit(p)">Edit</button>
-          <!-- Only pass the id to onDelete() — that's all we need -->
-          <button class="danger" (click)="onDelete(p.id)">Delete</button>
+          <!-- p-tag: colored badge for category -->
+          <p-tag [value]="product.category" severity="info"></p-tag>
+        </td>
+        <td>R{{ product.price | number:'1.2-2' }}</td>
+        <td>
+          <p-button
+            icon="pi pi-pencil"
+            styleClass="p-button-rounded p-button-text p-button-info mr-2"
+            (onClick)="onEdit(product)">
+          </p-button>
+          <p-button
+            icon="pi pi-trash"
+            styleClass="p-button-rounded p-button-text p-button-danger"
+            (onClick)="onDelete(product)">
+          </p-button>
         </td>
       </tr>
-    </tbody>
-  </table>
+    </ng-template>
+
+    <!-- Empty state message -->
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="5" style="text-align:center">No products found.</td>
+      </tr>
+    </ng-template>
+
+  </p-table>
+
+  <!-- DIALOG: modal popup for Add/Edit form
+       [(visible)]   — two-way binding controls open/close
+       [modal]       — blocks background interaction
+       [draggable]   — user can drag the dialog -->
+  <p-dialog
+    [(visible)]="showDialog"
+    [modal]="true"
+    [draggable]="false"
+    [header]="selectedProduct ? 'Edit Product' : 'New Product'"
+    [style]="{ width: '450px' }">
+
+    <!-- Form component rendered inside the dialog -->
+    <app-product-form
+      *ngIf="showDialog"
+      [product]="selectedProduct"
+      (save)="onSave($any($event))"
+      (cancel)="onCancel()">
+    </app-product-form>
+
+  </p-dialog>
 
 </div>
