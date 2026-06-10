@@ -1,73 +1,62 @@
 // ============================================================
-// ANGULAR SERVICES & DEPENDENCY INJECTION
+// ANGULAR HTTP CLIENT — Connecting to ASP.NET Core API
 //
-// A Service is a class that holds business logic and data,
-// kept separate from components (separation of concerns).
+// HttpClient is Angular's built-in service for HTTP requests.
+// It must be provided via HttpClientModule in app-module.ts.
 //
-// @Injectable({ providedIn: 'root' }) registers this service
-// in the ROOT INJECTOR — meaning Angular creates ONE shared
-// instance (singleton) available to the entire application.
+// All methods now return Observable<T> instead of plain values.
+// Observables are lazy streams — nothing happens until you
+// subscribe (or use the async pipe in templates).
 //
-// DEPENDENCY INJECTION (DI): Instead of components creating
-// their own instances with "new ProductService()", Angular
-// automatically injects the shared instance via the constructor.
+// Each method maps to a REST endpoint:
+//   getAll()       → GET    /api/products
+//   getById(id)    → GET    /api/products/:id
+//   create(data)   → POST   /api/products
+//   update(id)     → PUT    /api/products/:id
+//   delete(id)     → DELETE /api/products/:id
 // ============================================================
 
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Product } from '../models/product.model';
 
-@Injectable({
-  providedIn: 'root'  // Registers service at root level (singleton)
-})
+@Injectable({ providedIn: 'root' })
 export class ProductService {
 
-  // Private in-memory array simulates a database
-  // In a real app this would be replaced by HttpClient API calls
-  private products: Product[] = [
-    { id: 1, name: 'Laptop',     price: 12000, category: 'Electronics' },
-    { id: 2, name: 'Desk Chair', price: 3500,  category: 'Furniture'   },
-    { id: 3, name: 'Notebook',   price: 150,   category: 'Stationery'  },
-  ];
+  // Base URL of the ASP.NET Core API
+  // In production this would come from environment.ts
+  private apiUrl = 'http://localhost:5000/api/products';
 
-  // Auto-incrementing ID counter (simulates DB auto-increment)
-  private nextId = 4;
+  // HttpClient injected via DI — same pattern as before
+  constructor(private http: HttpClient) {}
 
-  // ── READ ──────────────────────────────────────────────────
-  // Returns a shallow copy of the array using spread operator
-  // so external code cannot directly mutate the private array
-  getAll(): Product[] {
-    return [...this.products];
+  // ── READ ALL ──────────────────────────────────────────────
+  // Returns Observable that emits Product[] when API responds
+  getAll(): Observable<Product[]> {
+    return this.http.get<Product[]>(this.apiUrl);
   }
 
-  // Find a single product by ID using Array.find()
-  getById(id: number): Product | undefined {
-    return this.products.find(p => p.id === id);
+  // ── READ ONE ──────────────────────────────────────────────
+  getById(id: number): Observable<Product> {
+    return this.http.get<Product>(`${this.apiUrl}/${id}`);
   }
 
   // ── CREATE ────────────────────────────────────────────────
-  // Omit<Product, 'id'> means: accept all Product fields
-  // EXCEPT 'id' (the service assigns the id automatically)
-  create(data: Omit<Product, 'id'>): Product {
-    const newProduct = { ...data, id: this.nextId++ }; // spread + assign id
-    this.products.push(newProduct);
-    return newProduct;
+  // POST sends product data as JSON body
+  // API returns the created product with its new id
+  create(data: Omit<Product, 'id'>): Observable<Product> {
+    return this.http.post<Product>(this.apiUrl, data);
   }
 
   // ── UPDATE ────────────────────────────────────────────────
-  // findIndex returns -1 if no match found (guard against that)
-  update(id: number, data: Omit<Product, 'id'>): Product | null {
-    const index = this.products.findIndex(p => p.id === id);
-    if (index === -1) return null;              // Product not found
-    this.products[index] = { id, ...data };    // Replace with new data
-    return this.products[index];
+  // PUT sends full product object to /api/products/:id
+  update(id: number, data: Omit<Product, 'id'>): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}`, { id, ...data });
   }
 
   // ── DELETE ────────────────────────────────────────────────
-  // splice(index, 1) removes exactly 1 element at that index
-  delete(id: number): boolean {
-    const index = this.products.findIndex(p => p.id === id);
-    if (index === -1) return false;
-    this.products.splice(index, 1);
-    return true;
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

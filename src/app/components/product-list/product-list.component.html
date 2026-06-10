@@ -17,6 +17,8 @@
 ============================================================ -->
 
 <div class="container">
+  <p *ngIf="isLoading">Loading products...</p>
+  <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
 
   <!-- Header row: title + Add button -->
   <div class="header">

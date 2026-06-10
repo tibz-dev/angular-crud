@@ -6,6 +6,7 @@ import { AppRoutingModule } from './app-routing-module';
 import { App } from './app';
 import { ProductListComponent } from './components/product-list/product-list.component';
 import { ProductFormComponent } from './components/product-form/product-form.component';
+import { HttpClientModule } from '@angular/common/http';
 
 // ============================================================
 // ANGULAR MODULES — NgModule
@@ -26,7 +27,8 @@ import { ProductFormComponent } from './components/product-form/product-form.com
     CommonModule,          // *ngIf, *ngFor, number pipe
     AppRoutingModule,      // Router wiring
     FormsModule,           // Template-driven forms
-    ReactiveFormsModule,   // Reactive forms (FormBuilder, Validators)
+    ReactiveFormsModule,
+    HttpClientModule,   // HTTP client for API calls
   ],
   bootstrap: [App]
 })

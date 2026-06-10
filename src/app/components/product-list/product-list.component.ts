@@ -1,17 +1,3 @@
-// ============================================================
-// ANGULAR COMPONENTS + LIFECYCLE HOOKS
-//
-// LIFECYCLE HOOK: ngOnInit
-//   Called once after Angular has initialised the component
-//   and set all @Input() properties. Ideal for loading data.
-//   Must implement the OnInit interface to use it.
-//
-// DEPENDENCY INJECTION:
-//   ProductService is injected via the constructor.
-//   Angular's DI system provides the singleton instance —
-//   no need to call "new ProductService()".
-// ============================================================
-
 import { Component, OnInit } from '@angular/core';
 import { Product } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
@@ -24,66 +10,92 @@ import { ProductService } from '../../services/product.service';
 })
 export class ProductListComponent implements OnInit {
 
-  // ── Component State ───────────────────────────────────────
-  products: Product[] = [];           // Holds the displayed list
-  selectedProduct: Product | null = null; // Product being edited (null = new)
-  showForm = false;                   // Toggles form visibility
+  products: Product[] = [];
+  selectedProduct: Product | null = null;
+  showForm = false;
+  isLoading = false;   // Shows loading state while API responds
+  errorMessage = '';   // Displays API errors to the user
 
-  // ── Dependency Injection ──────────────────────────────────
-  // Angular injects ProductService automatically at runtime
   constructor(private productService: ProductService) {}
 
-  // ── Lifecycle Hook: ngOnInit ──────────────────────────────
-  // Runs once after component creation — perfect for data loading
   ngOnInit(): void {
     this.loadProducts();
   }
 
-  // ── Helper: Load / Refresh List ──────────────────────────
+  // ── Subscribe to Observable to get data ──────────────────
+  // .subscribe() has two callbacks:
+  //   next  — runs when data arrives successfully
+  //   error — runs when the HTTP request fails
   loadProducts(): void {
-    this.products = this.productService.getAll(); // READ from service
+    this.isLoading = true;
+    this.productService.getAll().subscribe({
+      next: (data) => {
+        this.products = data;   // Assign API response to array
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.errorMessage = 'Failed to load products.';
+        this.isLoading = false;
+        console.error(err);
+      }
+    });
   }
 
-  // ── CREATE: Show blank form ───────────────────────────────
   onAdd(): void {
-    this.selectedProduct = null; // Null signals "new product" to the form
+    this.selectedProduct = null;
     this.showForm = true;
   }
 
-  // ── UPDATE: Show form pre-filled with selected product ────
-  // Spread { ...product } creates a copy so the original
-  // in the array is not mutated before the user saves
   onEdit(product: Product): void {
     this.selectedProduct = { ...product };
     this.showForm = true;
   }
 
-  // ── DELETE: Remove product after confirmation ─────────────
   onDelete(id: number): void {
     if (confirm('Are you sure you want to delete this product?')) {
-      this.productService.delete(id);
-      this.loadProducts(); // Refresh list after deletion
+      // Subscribe to the delete Observable to trigger the request
+      this.productService.delete(id).subscribe({
+        next: () => this.loadProducts(),
+        error: (err) => {
+          this.errorMessage = 'Failed to delete product.';
+          console.error(err);
+        }
+      });
     }
   }
 
-  // ── SAVE: Called by child form via @Output EventEmitter ───
-  // If selectedProduct exists → UPDATE, otherwise → CREATE
   onSave(data: Omit<Product, 'id'>): void {
     if (this.selectedProduct) {
-      // UPDATE: pass existing id + new form data
-      this.productService.update(this.selectedProduct.id, data);
+      // UPDATE — subscribe to trigger the PUT request
+      this.productService.update(this.selectedProduct.id, data).subscribe({
+        next: () => {
+          this.showForm = false;
+          this.selectedProduct = null;
+          this.loadProducts();
+        },
+        error: (err) => {
+          this.errorMessage = 'Failed to update product.';
+          console.error(err);
+        }
+      });
     } else {
-      // CREATE: service assigns a new id automatically
-      this.productService.create(data);
+      // CREATE — subscribe to trigger the POST request
+      this.productService.create(data).subscribe({
+        next: () => {
+          this.showForm = false;
+          this.loadProducts();
+        },
+        error: (err) => {
+          this.errorMessage = 'Failed to create product.';
+          console.error(err);
+        }
+      });
     }
-    this.showForm = false;
-    this.selectedProduct = null;
-    this.loadProducts(); // Refresh list after save
   }
 
-  // ── CANCEL: Hide form without saving ─────────────────────
   onCancel(): void {
     this.showForm = false;
     this.selectedProduct = null;
+    this.errorMessage = '';
   }
 }
